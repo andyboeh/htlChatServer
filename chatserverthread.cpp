@@ -53,6 +53,11 @@ void chatServerThread::run()
             running = false;
         } else if(command == "sendGreeting") {
             prepareGreeting();
+        } else if(command == "startEncryption") {
+            mSocket->startServerEncryption();
+            if(!mSocket->waitForEncrypted()) {
+                qDebug() << "Error enabling encryption.";
+            }
         } else if(command == "sendCommandList") {
 
             if(mMessagesToSend.isEmpty())
@@ -172,7 +177,7 @@ void chatServerThread::readyRead()
             emit broadcastMessage(mUsername, commands.at(1), "");
         }
     } else if(command == "startEncryption") {
-        mSocket->startServerEncryption();
+        mCommandList.append("startEncryption");
     } else if(command == "getUserList") {
         emit getUserList(mSocketDescriptor);
     }
