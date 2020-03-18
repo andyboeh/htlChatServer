@@ -21,14 +21,14 @@ void htlChatServer::setUsername(qintptr socketDescriptor, QString name)
     if(mUserMap.values().contains(name) && mUserMap.value(socketDescriptor) != name) {
         connect(this, SIGNAL(errorMessage(QString,QString)), thread, SLOT(errorMessage(QString,QString)));
         emit errorMessage("setUsername", "Username already in use.");
-        disconnect(SIGNAL(errorMessage));
+        disconnect(SIGNAL(errorMessage(QString,QString)));
         return;
     }
 
     if(mUserMap.value(socketDescriptor) == name) {
         connect(this, SIGNAL(successMessage(QString)), thread, SLOT(successMessage(QString)));
         emit successMessage("setUsername");
-        disconnect(SIGNAL(successMessage));
+        disconnect(SIGNAL(successMessage(QString)));
         return;
     }
 
@@ -38,7 +38,7 @@ void htlChatServer::setUsername(qintptr socketDescriptor, QString name)
     mUserMap.insert(socketDescriptor,name);
     connect(this, SIGNAL(successMessage(QString)), thread, SLOT(successMessage(QString)));
     emit successMessage("setUsername");
-    disconnect(SIGNAL(successMessage));
+    disconnect(SIGNAL(successMessage(QString)));
     emit newUserConnected(name);
 }
 
