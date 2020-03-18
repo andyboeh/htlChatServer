@@ -1,6 +1,8 @@
 #include "chatserverthread.h"
+#include "chatserverconfig.h"
 #include <QtNetwork>
 #include <QDebug>
+#include <QCoreApplication>
 
 chatServerThread::chatServerThread(int socketDescriptor, QObject *parent) : QThread(parent)
 {
@@ -12,11 +14,22 @@ chatServerThread::chatServerThread(int socketDescriptor, QObject *parent) : QThr
 void chatServerThread::run()
 {
     qDebug() << "Chat server thread running:" << mSocketDescriptor;
-    mSocket = new QTcpSocket();
+    mSocket = new QSslSocket();
     if(!mSocket->setSocketDescriptor(mSocketDescriptor)) {
         qDebug() << mSocket->error();
         return;
     }
+
+    chatServerConfig &csc = chatServerConfig::getInstance();
+    QSslKey key = csc.getKey();
+    QList<QSslCertificate> certs = csc.getCerts();
+
+    if(!key.isNull() && !certs.isEmpty()) {
+        mSocket->setLocalCertificateChain(certs);
+        mSocket->setPrivateKey(key);
+        mSocket->setPeerVerifyMode(QSslSocket::VerifyNone);
+    }
+
 
     connect(mSocket, SIGNAL(readyRead()), this, SLOT(readyRead()));
 
@@ -63,9 +76,11 @@ void chatServerThread::run()
 
 void chatServerThread::prepareGreeting() {
     QStringList commands;
+    QString ver = QCoreApplication::applicationVersion();
+
     commands.append("welcomeToServer");
-    commands.append("Version: 0.1");
-    commands.append("Commands: setUsername, sendMessage, getUserList");
+    commands.append("Version: " + ver);
+    commands.append("Commands: setUsername, sendMessage, getUserList, startEncryption");
     sendCommandList(commands);
 }
 
@@ -156,6 +171,8 @@ void chatServerThread::readyRead()
         } else {
             emit broadcastMessage(mUsername, commands.at(1), "");
         }
+    } else if(command == "startEncryption") {
+        mSocket->startServerEncryption();
     } else if(command == "getUserList") {
         emit getUserList(mSocketDescriptor);
     }

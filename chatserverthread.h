@@ -7,7 +7,7 @@
 #include <QAbstractSocket>
 #include <QDataStream>
 
-class QTcpSocket;
+class QSslSocket;
 
 class chatServerThread : public QThread
 {
@@ -50,7 +50,7 @@ private:
     QStringList mCommandList;
     QDataStream mStream;
     QString mUsername;
-    QTcpSocket *mSocket;
+    QSslSocket *mSocket;
     QList<QStringList> mMessagesToSend;
     void sendCommandList(QStringList commands);
     void prepareGreeting();
