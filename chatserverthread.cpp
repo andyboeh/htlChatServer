@@ -57,6 +57,8 @@ void chatServerThread::run()
             mSocket->startServerEncryption();
             if(!mSocket->waitForEncrypted()) {
                 qDebug() << "Error enabling encryption.";
+            } else {
+                qDebug() << "Connection encrypted.";
             }
         } else if(command == "sendCommandList") {
 
@@ -178,6 +180,10 @@ void chatServerThread::readyRead()
         }
     } else if(command == "startEncryption") {
         mCommandList.append("startEncryption");
+        if(mSocket->bytesAvailable() > 0) {
+            qDebug() << mSocket->bytesAvailable();
+        }
+        return;
     } else if(command == "getUserList") {
         emit getUserList(mSocketDescriptor);
     }
