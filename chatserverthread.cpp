@@ -194,19 +194,19 @@ void chatServerThread::sendChunk(QString username, QString data)
     sendCommandList(commands);
 }
 
-void chatServerThread::acceptFileTransfer(QString username)
+void chatServerThread::fileTransferAccepted(QString username)
 {
     QStringList commands;
-    commands.append("acceptFileTransfer");
+    commands.append("fileTransferAccepted");
     commands.append(username);
     sendCommandList(commands);
     mFileTransferStarted = true;
 }
 
-void chatServerThread::rejectFileTransfer(QString username)
+void chatServerThread::fileTransferRejected(QString username)
 {
     QStringList commands;
-    commands.append("rejectFileTransfer");
+    commands.append("fileTransferRejected");
     commands.append(username);
     sendCommandList(commands);
     mFileTransferStarted = false;

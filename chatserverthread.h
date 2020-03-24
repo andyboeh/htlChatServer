@@ -26,8 +26,8 @@ public slots:
     void startFileTransfer(QString username, QString filename, QString filesize);
     void finishFileTransfer(QString username);
     void sendChunk(QString username, QString data);
-    void acceptFileTransfer(QString username);
-    void rejectFileTransfer(QString username);
+    void fileTransferAccepted(QString username);
+    void fileTransferRejected(QString username);
 private slots:
     void readyRead();
     void socketError(QAbstractSocket::SocketError error);

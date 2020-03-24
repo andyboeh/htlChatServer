@@ -22,8 +22,8 @@ signals:
     void startFileTransfer(QString username, QString filename, QString filesize);
     void finishFileTransfer(QString username);
     void sendChunk(QString username, QString data);
-    void acceptFileTransfer(QString username);
-    void rejectFileTransfer(QString username);
+    void fileTransferAccepted(QString username);
+    void fileTransferRejected(QString username);
 public slots:
     void login(qintptr socketDescriptor, QString username, QString password);
     void setUsername(qintptr socketDescriptor, QString name);

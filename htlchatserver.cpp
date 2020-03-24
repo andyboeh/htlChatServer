@@ -133,9 +133,9 @@ void htlChatServer::acceptFileTransfer(qintptr socketDescriptor, QString receive
     chatServerThread *thread = mThreads.value(recv);
     QString sender = mUserMap.value(socketDescriptor);
 
-    connect(this, SIGNAL(acceptFileTransfer(QString)), thread, SLOT(acceptFileTransfer(QString)));
-    emit acceptFileTransfer(sender);
-    disconnect(SIGNAL(acceptFileTransfer(QString)));
+    connect(this, SIGNAL(fileTransferAccepted(QString)), thread, SLOT(fileTransferAccepted(QString)));
+    emit fileTransferAccepted(sender);
+    disconnect(SIGNAL(fileTransferAccepted(QString)));
 }
 
 void htlChatServer::rejectFileTransfer(qintptr socketDescriptor, QString receiver)
@@ -151,9 +151,9 @@ void htlChatServer::rejectFileTransfer(qintptr socketDescriptor, QString receive
     chatServerThread *thread = mThreads.value(recv);
     QString sender = mUserMap.value(socketDescriptor);
 
-    connect(this, SIGNAL(rejectFileTransfer(QString)), thread, SLOT(rejectFileTransfer(QString)));
-    emit rejectFileTransfer(sender);
-    disconnect(SIGNAL(rejectFileTransfer(QString)));
+    connect(this, SIGNAL(fileTransferRejected(QString)), thread, SLOT(fileTransferRejected(QString)));
+    emit fileTransferRejected(sender);
+    disconnect(SIGNAL(fileTransferRejected(QString)));
 }
 
 void htlChatServer::incomingConnection(qintptr socketDescriptor)
