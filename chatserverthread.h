@@ -1,4 +1,4 @@
-#ifndef CHATSERVERTHREAD_H
+﻿#ifndef CHATSERVERTHREAD_H
 #define CHATSERVERTHREAD_H
 
 #include <QDebug>
@@ -23,6 +23,11 @@ public slots:
     void sendUserList(QStringList userlist);
     void errorMessage(QString command, QString message);
     void successMessage(QString command);
+    void startFileTransfer(QString username, QString filename, QString filesize);
+    void finishFileTransfer(QString username);
+    void sendChunk(QString username, QString data);
+    void acceptFileTransfer(QString username);
+    void rejectFileTransfer(QString username);
 private slots:
     void readyRead();
     void socketError(QAbstractSocket::SocketError error);
@@ -32,6 +37,11 @@ signals:
     void setUsername(qintptr socket, QString username);
     void clientDisconnected(qintptr socketDescriptor);
     void getUserList(qintptr socketDescriptor);
+    void startFileTransfer(qintptr socket, QString receiver, QString filename, QString filesize);
+    void sendChunk(qintptr socket, QString receiver, QString data);
+    void finishFileTransfer(qintptr socket, QString receiver);
+    void acceptFileTransfer(qintptr socket, QString receiver);
+    void rejectFileTransfer(qintptr socket, QString receiver);
 
 private:
     void waitForCommand() {
@@ -46,6 +56,9 @@ private:
         }
     }
 
+    bool mFileTransferStarted;
+    QString mFileTransferReceiver;
+    bool mIsValid;
     int mSocketDescriptor;
     QStringList mCommandList;
     QDataStream mStream;

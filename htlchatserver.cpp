@@ -66,6 +66,96 @@ void htlChatServer::getUserList(qintptr socketDescriptor)
     disconnect(SIGNAL(sendUserList(QStringList)));
 }
 
+void htlChatServer::startFileTransfer(qintptr socketDescriptor, QString receiver, QString filename, QString filesize)
+{
+    if(!mUserMap.values().contains(receiver)) {
+        chatServerThread *senderThread = mThreads.value(socketDescriptor);
+        connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
+        emit errorMessage("startFileTransfer", "Receiver not connected.");
+        disconnect(SIGNAL(errorMessage(QString,QString)));
+        return;
+    }
+    qintptr recv = mUserMap.key(receiver);
+    chatServerThread *thread = mThreads.value(recv);
+    QString sender = mUserMap.value(socketDescriptor);
+
+    connect(this, SIGNAL(startFileTransfer(QString,QString,QString)), thread, SLOT(startFileTransfer(QString,QString,QString)));
+    emit startFileTransfer(sender, filename, filesize);
+    disconnect(SIGNAL(startFileTransfer(QString,QString,QString)));
+}
+
+void htlChatServer::sendChunk(qintptr socketDescriptor, QString receiver, QString data)
+{
+    if(!mUserMap.values().contains(receiver)) {
+        chatServerThread *senderThread = mThreads.value(socketDescriptor);
+        connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
+        emit errorMessage("sendChunk", "Receiver not connected.");
+        disconnect(SIGNAL(errorMessage(QString,QString)));
+        return;
+    }
+    qintptr recv = mUserMap.key(receiver);
+    chatServerThread *thread = mThreads.value(recv);
+    QString sender = mUserMap.value(socketDescriptor);
+
+    connect(this, SIGNAL(sendChunk(QString,QString)), thread, SLOT(sendChunk(QString,QString)));
+    emit sendChunk(sender, data);
+    disconnect(SIGNAL(sendChunk(QString,QString)));
+}
+
+void htlChatServer::finishFileTransfer(qintptr socketDescriptor, QString receiver)
+{
+    if(!mUserMap.values().contains(receiver)) {
+        chatServerThread *senderThread = mThreads.value(socketDescriptor);
+        connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
+        emit errorMessage("finishFileTransfer", "Receiver not connected.");
+        disconnect(SIGNAL(errorMessage(QString,QString)));
+        return;
+    }
+    qintptr recv = mUserMap.key(receiver);
+    chatServerThread *thread = mThreads.value(recv);
+    QString sender = mUserMap.value(socketDescriptor);
+
+    connect(this, SIGNAL(finishFileTransfer(QString)), thread, SLOT(finishFileTransfer(QString)));
+    emit finishFileTransfer(sender);
+    disconnect(SIGNAL(finishFileTransfer(QString)));
+}
+
+void htlChatServer::acceptFileTransfer(qintptr socketDescriptor, QString receiver)
+{
+    if(!mUserMap.values().contains(receiver)) {
+        chatServerThread *senderThread = mThreads.value(socketDescriptor);
+        connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
+        emit errorMessage("acceptFileTransfer", "Receiver not connected.");
+        disconnect(SIGNAL(errorMessage(QString,QString)));
+        return;
+    }
+    qintptr recv = mUserMap.key(receiver);
+    chatServerThread *thread = mThreads.value(recv);
+    QString sender = mUserMap.value(socketDescriptor);
+
+    connect(this, SIGNAL(acceptFileTransfer(QString)), thread, SLOT(acceptFileTransfer(QString)));
+    emit acceptFileTransfer(sender);
+    disconnect(SIGNAL(acceptFileTransfer(QString)));
+}
+
+void htlChatServer::rejectFileTransfer(qintptr socketDescriptor, QString receiver)
+{
+    if(!mUserMap.values().contains(receiver)) {
+        chatServerThread *senderThread = mThreads.value(socketDescriptor);
+        connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
+        emit errorMessage("rejectFileTransfer", "Receiver not connected.");
+        disconnect(SIGNAL(errorMessage(QString,QString)));
+        return;
+    }
+    qintptr recv = mUserMap.key(receiver);
+    chatServerThread *thread = mThreads.value(recv);
+    QString sender = mUserMap.value(socketDescriptor);
+
+    connect(this, SIGNAL(rejectFileTransfer(QString)), thread, SLOT(rejectFileTransfer(QString)));
+    emit rejectFileTransfer(sender);
+    disconnect(SIGNAL(rejectFileTransfer(QString)));
+}
+
 void htlChatServer::incomingConnection(qintptr socketDescriptor)
 {
     qDebug() << "incomingConnection";
@@ -76,8 +166,14 @@ void htlChatServer::incomingConnection(qintptr socketDescriptor)
     connect(thread, SIGNAL(clientDisconnected(qintptr)), this, SLOT(clientDisconnected(qintptr)));
     connect(thread, SIGNAL(getUserList(qintptr)), this, SLOT(getUserList(qintptr)));
     connect(thread, SIGNAL(broadcastMessage(QString,QString,QString)), this, SLOT(messageToBroadcast(QString,QString,QString)));
+    connect(thread, SIGNAL(startFileTransfer(qintptr,QString,QString,QString)), this, SLOT(startFileTransfer(qintptr,QString,QString,QString)));
+    connect(thread, SIGNAL(sendChunk(qintptr,QString,QString)), this, SLOT(sendChunk(qintptr,QString,QString)));
+    connect(thread, SIGNAL(finishFileTransfer(qintptr,QString)), this, SLOT(finishFileTransfer(qintptr,QString)));
+    connect(thread, SIGNAL(acceptFileTransfer(qintptr,QString)), this, SLOT(acceptFileTransfer(qintptr,QString)));
+    connect(thread, SIGNAL(rejectFileTransfer(qintptr,QString)), this, SLOT(rejectFileTransfer(qintptr,QString)));
     connect(this, SIGNAL(newUserConnected(QString)), thread, SLOT(newUserConnected(QString)));
     connect(this, SIGNAL(userDisconnected(QString)), thread, SLOT(userDisconnected(QString)));
+
     thread->start();
     mThreads.insert(socketDescriptor,thread);
 }

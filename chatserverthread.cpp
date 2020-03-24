@@ -9,6 +9,7 @@ chatServerThread::chatServerThread(int socketDescriptor, QObject *parent) : QThr
     mSocketDescriptor = socketDescriptor;
     mSocket = nullptr;
     qRegisterMetaType<QAbstractSocket::SocketError>();
+    mIsValid = false;
 }
 
 void chatServerThread::run()
@@ -72,9 +73,9 @@ void chatServerThread::run()
             out << commands;
             mSocket->write(data);
         }
-
     }
 
+    qDebug() << "Client thread quit.";
     mSocket->disconnectFromHost();
     mSocket->close();
     delete mSocket;
@@ -139,6 +140,9 @@ void chatServerThread::sendUserList(QStringList userlist)
 
 void chatServerThread::errorMessage(QString command, QString message)
 {
+    if(command == "setUsername") {
+        mIsValid = false;
+    }
     QStringList commands;
     commands.append("commandFailed");
     commands.append(command);
@@ -148,24 +152,85 @@ void chatServerThread::errorMessage(QString command, QString message)
 
 void chatServerThread::successMessage(QString command)
 {
+    if(command == "setUsername") {
+        mIsValid = true;
+    }
     QStringList commands;
     commands.append("commandSuccessful");
     commands.append(command);
     sendCommandList(commands);
 }
 
+void chatServerThread::startFileTransfer(QString username, QString filename, QString filesize)
+{
+    QStringList commands;
+    commands.append("startFileTransfer");
+    commands.append(username);
+    commands.append(filename);
+    commands.append(filesize);
+    sendCommandList(commands);
+}
+
+void chatServerThread::finishFileTransfer(QString username)
+{
+    if(!mFileTransferStarted)
+        return;
+    mFileTransferStarted = false;
+    QStringList commands;
+    commands.append("finishFileTransfer");
+    commands.append(username);
+    sendCommandList(commands);
+}
+
+void chatServerThread::sendChunk(QString username, QString data)
+{
+    if(!mFileTransferStarted) {
+        return;
+    }
+    QStringList commands;
+    commands.append("sendChunk");
+    commands.append(username);
+    commands.append(data);
+    sendCommandList(commands);
+}
+
+void chatServerThread::acceptFileTransfer(QString username)
+{
+    QStringList commands;
+    commands.append("acceptFileTransfer");
+    commands.append(username);
+    sendCommandList(commands);
+    mFileTransferStarted = true;
+}
+
+void chatServerThread::rejectFileTransfer(QString username)
+{
+    QStringList commands;
+    commands.append("rejectFileTransfer");
+    commands.append(username);
+    sendCommandList(commands);
+    mFileTransferStarted = false;
+}
+
 void chatServerThread::readyRead()
 {
-    mStream.startTransaction();
-
     QStringList commands;
-    mStream >> commands;
+    try {
+        mStream.startTransaction();
 
-    if(!mStream.commitTransaction())
-        return;
+        mStream >> commands;
 
-    if(commands.isEmpty())
+        if(!mStream.commitTransaction())
+            return;
+
+        if(commands.isEmpty())
+            return;
+
+    } catch (std::bad_alloc &exception) {
+        qDebug() << "got bad_alloc, disconnecting client!";
+        mCommandList.prepend("stopThread");
         return;
+    }
 
     QString command = commands.at(0);
 
@@ -173,19 +238,73 @@ void chatServerThread::readyRead()
         mUsername = commands.at(1);
         emit setUsername(mSocketDescriptor, commands.at(1));
     } else if(command == "sendMessage" && commands.length() > 1) {
-        if(commands.length() > 2) {
-            emit broadcastMessage(mUsername, commands.at(1), commands.at(2));
+        if(!mIsValid) {
+            errorMessage(command, "Username not set");
         } else {
-            emit broadcastMessage(mUsername, commands.at(1), "");
+            if(commands.length() > 2) {
+                emit broadcastMessage(mUsername, commands.at(1), commands.at(2));
+            } else {
+                emit broadcastMessage(mUsername, commands.at(1), "");
+            }
         }
     } else if(command == "startEncryption") {
         mCommandList.append("startEncryption");
-        if(mSocket->bytesAvailable() > 0) {
-            qDebug() << mSocket->bytesAvailable();
-        }
         return;
     } else if(command == "getUserList") {
-        emit getUserList(mSocketDescriptor);
+        if(!mIsValid) {
+            errorMessage(command, "Username not set");
+        } else {
+            emit getUserList(mSocketDescriptor);
+        }
+    } else if(command == "startFileTransfer" && commands.length() > 3) {
+        if (!mIsValid) {
+            errorMessage(command, "Username not set");
+        } if(mFileTransferStarted) {
+            errorMessage(command, "File transfer already running");
+        } else {
+            mFileTransferReceiver = commands.at(1);
+            emit startFileTransfer(mSocketDescriptor, commands.at(1), commands.at(2), commands.at(3));
+        }
+    } else if(command == "sendChunk" && commands.length() > 2) {
+        if(!mIsValid) {
+            errorMessage(command, "Username not set");
+        } else if(!mFileTransferStarted) {
+            errorMessage(command, "File transfer not started.");
+        } else if(mFileTransferReceiver != commands.at(1)) {
+            errorMessage(command, "Receiver not valid");
+        } else {
+            emit sendChunk(mSocketDescriptor, commands.at(1), commands.at(2));
+        }
+    } else if(command == "finishFileTransfer") {
+        if(!mIsValid) {
+            errorMessage(command, "Username not set");
+        } else if(!mFileTransferStarted) {
+            errorMessage(command, "No file transfer running.");
+        } else {
+            emit finishFileTransfer(mSocketDescriptor, mFileTransferReceiver);
+            mFileTransferStarted = false;
+            mFileTransferReceiver = "";
+        }
+    } else if(command == "acceptFileTransfer" && commands.length() > 1) {
+        if(!mIsValid) {
+            errorMessage(command, "Username not set");
+        } else if(mFileTransferStarted) {
+            errorMessage(command, "Filetransfer already running.");
+        } else {
+            mFileTransferStarted = true;
+            emit acceptFileTransfer(mSocketDescriptor, commands.at(1));
+        }
+    } else if(command == "rejectFileTransfer" && commands.length() > 1) {
+        if(!mIsValid) {
+            errorMessage(command, "Username not set");
+        } else if(mFileTransferStarted) {
+            errorMessage(command, "Filetransfer already running.");
+        } else {
+            mFileTransferStarted = false;
+            emit rejectFileTransfer(mSocketDescriptor, commands.at(1));
+        }
+    } else {
+        errorMessage(command, "Invalid command or parameters");
     }
 
     if(mSocket->bytesAvailable() > 0) {
