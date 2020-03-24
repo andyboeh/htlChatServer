@@ -88,7 +88,9 @@ void chatServerThread::prepareGreeting() {
 
     commands.append("welcomeToServer");
     commands.append("Version: " + ver);
-    commands.append("Commands: setUsername, sendMessage, getUserList, startEncryption");
+    commands.append("Commands: setUsername, sendMessage, getUserList, startEncryption"
+                    "startFileTransfer, finishFileTransfer, sendChunk, acceptFileTransfer,"
+                    "rejectFileTransfer");
     sendCommandList(commands);
 }
 
