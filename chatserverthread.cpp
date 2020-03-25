@@ -102,6 +102,8 @@ void chatServerThread::sendCommandList(QStringList commands) {
 
 void chatServerThread::messageToBroadcast(QString sender, QString message, QString receiver)
 {
+    if(sender == mUsername)
+        return;
     if(receiver.isEmpty() || receiver == mUsername) {
         QStringList commands;
         commands.append("newMessage");
