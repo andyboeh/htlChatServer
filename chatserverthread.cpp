@@ -10,6 +10,8 @@ chatServerThread::chatServerThread(int socketDescriptor, QObject *parent) : QThr
     mSocket = nullptr;
     qRegisterMetaType<QAbstractSocket::SocketError>();
     mIsValid = false;
+    mFileTransferStarted = false;
+    mFileTransferReceiver = "";
 }
 
 void chatServerThread::run()
@@ -266,7 +268,7 @@ void chatServerThread::readyRead()
     } else if(command == "startFileTransfer" && commands.length() > 3) {
         if (!mIsValid) {
             errorMessage(command, "Username not set");
-        } if(mFileTransferStarted) {
+        } else if(mFileTransferStarted) {
             errorMessage(command, "File transfer already running");
         } else {
             mFileTransferReceiver = commands.at(1);
