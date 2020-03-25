@@ -118,6 +118,9 @@ void chatServerThread::messageToBroadcast(QString sender, QString message, QStri
 
 void chatServerThread::newUserConnected(QString username)
 {
+    if(username == mUsername)
+        return;
+
     QStringList commands;
     commands.append("newUserConnected");
     commands.append(username);
