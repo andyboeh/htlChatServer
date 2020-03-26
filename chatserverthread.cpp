@@ -80,8 +80,7 @@ void chatServerThread::run()
     qDebug() << "Client thread quit.";
     mSocket->disconnectFromHost();
     mSocket->close();
-    delete mSocket;
-    mSocket = nullptr;
+    mSocket->deleteLater();
 }
 
 void chatServerThread::prepareGreeting() {
