@@ -14,6 +14,8 @@ void htlChatServer::login(qintptr socketDescriptor, QString username, QString pa
 
 void htlChatServer::setUsername(qintptr socketDescriptor, QString name)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     QString oldusername;
     chatServerThread *thread = mThreads.value(socketDescriptor);
 
@@ -59,6 +61,8 @@ void htlChatServer::clientDisconnected(qintptr socketDescriptor)
 
 void htlChatServer::getUserList(qintptr socketDescriptor)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     QStringList users = mUserMap.values();
     chatServerThread *thread = mThreads.value(socketDescriptor);
     connect(this, SIGNAL(sendUserList(QStringList)), thread, SLOT(sendUserList(QStringList)));
@@ -68,6 +72,8 @@ void htlChatServer::getUserList(qintptr socketDescriptor)
 
 void htlChatServer::startFileTransfer(qintptr socketDescriptor, QString receiver, QString filename, QString filesize)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     if(!mUserMap.values().contains(receiver)) {
         chatServerThread *senderThread = mThreads.value(socketDescriptor);
         connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
@@ -86,6 +92,8 @@ void htlChatServer::startFileTransfer(qintptr socketDescriptor, QString receiver
 
 void htlChatServer::sendChunk(qintptr socketDescriptor, QString receiver, QString data)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     if(!mUserMap.values().contains(receiver)) {
         chatServerThread *senderThread = mThreads.value(socketDescriptor);
         connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
@@ -104,6 +112,8 @@ void htlChatServer::sendChunk(qintptr socketDescriptor, QString receiver, QStrin
 
 void htlChatServer::finishFileTransfer(qintptr socketDescriptor, QString receiver)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     if(!mUserMap.values().contains(receiver)) {
         chatServerThread *senderThread = mThreads.value(socketDescriptor);
         connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
@@ -122,6 +132,8 @@ void htlChatServer::finishFileTransfer(qintptr socketDescriptor, QString receive
 
 void htlChatServer::acceptFileTransfer(qintptr socketDescriptor, QString receiver)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     if(!mUserMap.values().contains(receiver)) {
         chatServerThread *senderThread = mThreads.value(socketDescriptor);
         connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
@@ -140,6 +152,8 @@ void htlChatServer::acceptFileTransfer(qintptr socketDescriptor, QString receive
 
 void htlChatServer::rejectFileTransfer(qintptr socketDescriptor, QString receiver)
 {
+    if(!mThreads.contains(socketDescriptor))
+        return;
     if(!mUserMap.values().contains(receiver)) {
         chatServerThread *senderThread = mThreads.value(socketDescriptor);
         connect(this, SIGNAL(errorMessage(QString,QString)), senderThread, SLOT(errorMessage(QString,QString)));
